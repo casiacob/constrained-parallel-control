@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from typing import Callable
 from jax import lax
 
+
 def wrap_angle(x: float) -> float:
     # wrap angle between [0, 2*pi]
     return x % (2.0 * jnp.pi)
@@ -12,7 +13,7 @@ def runge_kutta(
     action: jnp.ndarray,
     ode: Callable,
     step: float,
-)->jnp.ndarray:
+) -> jnp.ndarray:
     k1 = ode(state, action)
     k2 = ode(state + 0.5 * step * k1, action)
     k3 = ode(state + 0.5 * step * k2, action)
@@ -20,7 +21,9 @@ def runge_kutta(
     return state + step / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 
 
-def discretize_dynamics(ode: Callable, simulation_step: float, downsampling: int)-> Callable:
+def discretize_dynamics(
+    ode: Callable, simulation_step: float, downsampling: int
+) -> Callable:
     def dynamics(
         state: jnp.ndarray,
         action: jnp.ndarray,
@@ -44,14 +47,16 @@ def discretize_dynamics(ode: Callable, simulation_step: float, downsampling: int
     return dynamics
 
 
-def euler(ode: Callable, simulation_step: float)->Callable:
+def euler(ode: Callable, simulation_step: float) -> Callable:
     def dynamics(state, control):
         return state + simulation_step * ode(state, control)
 
     return dynamics
 
 
-def rollout(dynamics: Callable, controls: jnp.ndarray, initial_state: jnp.ndarray)->jnp.ndarray:
+def rollout(
+    dynamics: Callable, controls: jnp.ndarray, initial_state: jnp.ndarray
+) -> jnp.ndarray:
     def body(xt, ut):
         return dynamics(xt, ut), dynamics(xt, ut)
 

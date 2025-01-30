@@ -29,6 +29,7 @@ class LinearizedOCP(NamedTuple):
     R: jnp.ndarray
     M: jnp.ndarray
 
+
 class ADMM_OCP(NamedTuple):
     dynamics: Callable
     projection: Callable

@@ -45,7 +45,6 @@ def compute_lqr_params(lagrange_multipliers: jnp.ndarray, d: Derivatives):
     )
 
 
-
 def bwd_pass(
     final_cost: Callable, xN: jnp.ndarray, lqr: LinearizedOCP, d: Derivatives, rp: float
 ):
@@ -168,7 +167,17 @@ def argmin_xu(
         # exit_cond = jnp.logical_or(exit_cond, t > 3045)
         return jnp.logical_not(exit_cond)
 
-    (opt_x, opt_u, _, _, _, _, _, _, _,) = lax.while_loop(
+    (
+        opt_x,
+        opt_u,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = lax.while_loop(
         while_cond,
         while_body,
         (states, controls, consensus, dual, 0, mu0, nu0, jnp.array(1.0), jnp.bool(1.0)),
@@ -207,7 +216,6 @@ def seq_admm(
     projection: Callable,
     states0: jnp.ndarray,
     controls0: jnp.ndarray,
-
     consensus0: jnp.ndarray,
     dual0: jnp.ndarray,
     penalty_param: float,

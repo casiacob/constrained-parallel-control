@@ -171,13 +171,19 @@ def newton_oc(
             r_inc = jnp.where(succesful_minimzation, 2.0, 2 * r_inc)
             rp = jnp.clip(rp, 1e-16, 1e16)
             inner_it_counter += 1
-            return temp_x, temp_u, succesful_minimzation, Hu_norm, rp, r_inc, inner_it_counter
+            return (
+                temp_x,
+                temp_u,
+                succesful_minimzation,
+                Hu_norm,
+                rp,
+                r_inc,
+                inner_it_counter,
+            )
 
         def while_inner_cond(inner_val):
             _, _, succesful_minimzation, _, _, _, inner_it_counter = inner_val
-            exit_cond = jnp.logical_or(
-                succesful_minimzation, inner_it_counter > 500
-            )
+            exit_cond = jnp.logical_or(succesful_minimzation, inner_it_counter > 500)
             return jnp.logical_not(exit_cond)
 
         x, u, _, Hamiltonian_norm, reg_param, reg_inc, _ = lax.while_loop(

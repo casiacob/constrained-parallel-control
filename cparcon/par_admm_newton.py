@@ -90,7 +90,9 @@ def par_solution(
     R = R + jnp.kron(jnp.ones((R.shape[0], 1, 1)), reg_param * jnp.eye(R.shape[1]))
     lqt = noc_to_lqt(ru, Q, R, M, derivatives.fx, derivatives.fu)
     Kx_par, d_par, S_par, v_par, pred_reduction, convex_problem = par_bwd_pass(lqt)
-    du_par, dx_par = par_fwd_pass(lqt, jnp.zeros(nominal_states[0].shape[0]), Kx_par, d_par)
+    du_par, dx_par = par_fwd_pass(
+        lqt, jnp.zeros(nominal_states[0].shape[0]), Kx_par, d_par
+    )
     return dx_par, du_par, pred_reduction, convex_problem, ru
 
 
@@ -101,7 +103,7 @@ def argmin_xu(
     consensus: jnp.ndarray,
     dual: jnp.ndarray,
 ):
-    mu0 = 1.
+    mu0 = 1.0
     nu0 = 2.0
 
     def while_body(val):
@@ -113,7 +115,9 @@ def argmin_xu(
 
         def while_inner_loop(inner_val):
             _, _, _, _, rp, r_inc, inner_it_counter = inner_val
-            dx, du, predicted_reduction, bwd_pass_feasible, Hu = par_solution(x, derivatives, rp, ru, Q, R, M)
+            dx, du, predicted_reduction, bwd_pass_feasible, Hu = par_solution(
+                x, derivatives, rp, ru, Q, R, M
+            )
             temp_u = u + du
             temp_x = x + dx
             Hu_norm = jnp.max(jnp.abs(Hu))
@@ -129,13 +133,19 @@ def argmin_xu(
             r_inc = jnp.where(succesful_minimzation, 2.0, 2 * r_inc)
             rp = jnp.clip(rp, 1e-16, 1e16)
             inner_it_counter += 1
-            return temp_x, temp_u, succesful_minimzation, Hu_norm, rp, r_inc, inner_it_counter
+            return (
+                temp_x,
+                temp_u,
+                succesful_minimzation,
+                Hu_norm,
+                rp,
+                r_inc,
+                inner_it_counter,
+            )
 
         def while_inner_cond(inner_val):
             _, _, succesful_minimzation, _, _, _, inner_it_counter = inner_val
-            exit_cond = jnp.logical_or(
-                succesful_minimzation, inner_it_counter > 500
-            )
+            exit_cond = jnp.logical_or(succesful_minimzation, inner_it_counter > 500)
             return jnp.logical_not(exit_cond)
 
         x, u, _, Hamiltonian_norm, reg_param, reg_inc, _ = lax.while_loop(
@@ -154,7 +164,7 @@ def argmin_xu(
     opt_x, opt_u, _, _, iterations, _, _, _ = lax.while_loop(
         while_cond,
         while_body,
-        (states, controls, consensus, dual, 0, mu0, nu0, jnp.array(1.0))
+        (states, controls, consensus, dual, 0, mu0, nu0, jnp.array(1.0)),
     )
     return opt_x, opt_u, iterations
 
