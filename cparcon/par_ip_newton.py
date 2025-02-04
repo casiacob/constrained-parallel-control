@@ -8,6 +8,8 @@ from paroc.lqt_problem import LQT
 from cparcon.utils import rollout
 from cparcon.costates import par_costates
 
+import pandas as pd
+
 
 def compute_derivatives(
     ocp: OCP, states: jnp.ndarray, controls: jnp.ndarray, bp: float
@@ -83,26 +85,6 @@ def noc_to_lqt(
     return lqt
 
 
-def nonlin_rollout(
-    ocp: OCP,
-    gain: jnp.ndarray,
-    ffgain: jnp.ndarray,
-    nominal_states: jnp.ndarray,
-    nominal_controls: jnp.ndarray,
-):
-    def body(x_hat, inp):
-        K, k, x, u = inp
-        u_hat = u + k + K @ (x_hat - x)
-        next_x_hat = ocp.dynamics(x_hat, u_hat)
-        return next_x_hat, (x_hat, u_hat)
-
-    new_final_state, (new_states, new_controls) = jax.lax.scan(
-        body, nominal_states[0], (gain, ffgain, nominal_states[:-1], nominal_controls)
-    )
-    new_states = jnp.vstack((new_states, new_final_state))
-    return new_states, new_controls
-
-
 def par_Newton(
     nominal_states: jnp.ndarray,
     d: Derivatives,
@@ -112,8 +94,8 @@ def par_Newton(
     R: jnp.ndarray,
     M: jnp.ndarray,
 ):
-    grad_cost_norm = jnp.linalg.norm(d.cu)
-    reg_param = reg_param * grad_cost_norm
+    # grad_cost_norm = jnp.linalg.norm(d.cu)
+    # reg_param = reg_param * grad_cost_norm
     R = R + jnp.kron(jnp.ones((R.shape[0], 1, 1)), reg_param * jnp.eye(R.shape[1]))
     lqt = noc_to_lqt(ru, Q, R, M, d.fx, d.fu)
     Kx_par, d_par, S_par, v_par, pred_reduction, feasible = par_bwd_pass(lqt)
@@ -199,21 +181,21 @@ def newton_oc(
         iteration_counter = iteration_counter + 1
         # jax.debug.print("---------------------------------")
         # jax.debug.breakpoint()
-        return x, u, iteration_counter, reg_param, reg_inc, Hamiltonian_norm
+        return (
+            x,
+            u,
+            iteration_counter,
+            reg_param,
+            reg_inc,
+            Hamiltonian_norm,
+        )
 
     def while_cond(val):
         _, _, iteration_counter, _, _, Hamiltonian_norm = val
-        exit_cond = jnp.logical_or(Hamiltonian_norm < 1e-3, iteration_counter > 1000)
+        exit_cond = jnp.logical_or(Hamiltonian_norm < 1e-4, iteration_counter > 1000)
         return jnp.logical_not(exit_cond)
 
-    (
-        opt_x,
-        opt_u,
-        iterations,
-        _,
-        _,
-        _,
-    ) = lax.while_loop(
+    (opt_x, opt_u, iterations, _, _, _) = lax.while_loop(
         while_cond,
         while_body,
         (
@@ -231,26 +213,27 @@ def newton_oc(
 
 
 def par_interior_point_optimal_control(
-    ocp: OCP,
-    controls: jnp.ndarray,
-    initial_state: jnp.ndarray,
+    ocp: OCP, controls: jnp.ndarray, initial_state: jnp.ndarray
 ):
     initial_barrier_param = 0.1
 
     def while_body(val):
-        u, barrier_param, total_newton_iterations = val
+        u, barrier_param, total_newton_iterations, outer_it_cnt = val
         _, u, newton_iterations = newton_oc(ocp, u, initial_state, barrier_param)
         barrier_param = barrier_param / 5
         total_newton_iterations = total_newton_iterations + newton_iterations
+        outer_it_cnt = outer_it_cnt + 1
         # jax.debug.breakpoint()
-        return u, barrier_param, total_newton_iterations
+        return u, barrier_param, total_newton_iterations, outer_it_cnt
 
     def while_cond(val):
-        _, bp, _ = val
+        _, bp, _, _ = val
         return bp > 1e-4
 
-    opt_u, _, N_iterations = lax.while_loop(
-        while_cond, while_body, (controls, initial_barrier_param, 0)
+    opt_u, _, N_iterations, _ = lax.while_loop(
+        while_cond,
+        while_body,
+        (controls, initial_barrier_param, 0, 0),
     )
     # jax.debug.print("converged in {x}", x=t_conv)
     # opt_x = rollout(ocp.dynamics, opt_u, initial_state)

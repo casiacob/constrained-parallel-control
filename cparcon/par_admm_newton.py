@@ -7,6 +7,7 @@ from paroc.lqt_problem import LQT
 from paroc import par_bwd_pass, par_fwd_pass
 from typing import Callable
 from cparcon.costates import par_costates
+import jax
 
 
 def compute_derivatives(
@@ -87,6 +88,8 @@ def par_solution(
     R: jnp.ndarray,
     M: jnp.ndarray,
 ):
+    # grad_cost_norm = jnp.linalg.norm(derivatives.cu)
+    # reg_param = reg_param * grad_cost_norm
     R = R + jnp.kron(jnp.ones((R.shape[0], 1, 1)), reg_param * jnp.eye(R.shape[1]))
     lqt = noc_to_lqt(ru, Q, R, M, derivatives.fx, derivatives.fu)
     Kx_par, d_par, S_par, v_par, pred_reduction, convex_problem = par_bwd_pass(lqt)
@@ -154,6 +157,7 @@ def argmin_xu(
             (x, u, jnp.bool_(0.0), 0.0, reg_param, reg_inc, 0),
         )
         iteration_counter = iteration_counter + 1
+        # jax.debug.print("|H_u|:        {x}", x=Hamiltonian_norm)
         return x, u, z, l, iteration_counter, reg_param, reg_inc, Hamiltonian_norm
 
     def while_cond(val):
@@ -227,7 +231,7 @@ def par_admm(
     def admm_iteration(val):
         x, u, z, l, _, _, it_cnt = val
         x, u, it = argmin_xu(admm_ocp, x, u, z, l)
-        it_cnt += it
+        it_cnt += 1
         prev_z = z
         z = argmin_z(admm_ocp, x, u, l)
 
@@ -235,7 +239,10 @@ def par_admm(
 
         rp_infty = primal_residual(x, u, z)
         rd_infty = jnp.max(jnp.abs(z - prev_z))
-        it_cnt += 1
+        jax.debug.print("iteration = {x}", x=it_cnt)
+        jax.debug.print("rp =        {x}", x=rp_infty)
+        jax.debug.print("rd =        {x}", x=rd_infty)
+        jax.debug.print("------------------------------------------------")
         return x, u, z, l, rp_infty, rd_infty, it_cnt
 
     def admm_conv(val):
@@ -254,9 +261,8 @@ def par_admm(
     ) = lax.while_loop(
         admm_conv,
         admm_iteration,
-        (states0, controls0, consensus0, dual0, jnp.inf, jnp.inf, 0.0),
+        (states0, controls0, consensus0, dual0, jnp.inf, jnp.inf, 0),
     )
     # debug.print("iterations      {x}", x=iterations)
     # debug.print("------------------------------")
-    # debug.breakpoint()
     return opt_states, opt_controls, opt_consensus, opt_dual, iterations
