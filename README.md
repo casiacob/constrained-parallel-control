@@ -1,5 +1,4 @@
-First clone and install the unconstrained parallel optimal control solver
-Clone the repository:
+Clone and install the unconstrained parallel optimal control solver (to be used by the constrained solver)
 
 ```
 $ git clone https://github.com/casiacob/parallel-optimal-control.git
@@ -13,7 +12,7 @@ $ cd parallel-optimal-control
 $ pip install .
 ```
 
-Clone the repository:
+Clone and install the constrained parallel optimal control solver
 ```
 $ cd ..
 $ git clone https://github.com/casiacob/constrained-parallel-control.git
