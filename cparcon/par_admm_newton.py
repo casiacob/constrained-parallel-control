@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 from jax import grad, hessian, jacrev
-from jax import vmap, debug
+from jax import vmap
 from jax import lax
 from cparcon.optimal_control_problem import ADMM_OCP, Derivatives
 from paroc.lqt_problem import LQT
@@ -239,10 +239,10 @@ def par_admm(
 
         rp_infty = primal_residual(x, u, z)
         rd_infty = jnp.max(jnp.abs(z - prev_z))
-        jax.debug.print("iteration = {x}", x=it_cnt)
-        jax.debug.print("rp =        {x}", x=rp_infty)
-        jax.debug.print("rd =        {x}", x=rd_infty)
-        jax.debug.print("------------------------------------------------")
+        # jax.debug.print("iteration = {x}", x=it_cnt)
+        # jax.debug.print("rp =        {x}", x=rp_infty)
+        # jax.debug.print("rd =        {x}", x=rd_infty)
+        # jax.debug.print("------------------------------------------------")
         return x, u, z, l, rp_infty, rd_infty, it_cnt
 
     def admm_conv(val):

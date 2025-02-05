@@ -8,7 +8,6 @@ from paroc.lqt_problem import LQT
 from cparcon.utils import rollout
 from cparcon.costates import par_costates
 
-import pandas as pd
 
 
 def compute_derivatives(
@@ -176,7 +175,7 @@ def newton_oc(
 
         # jax.debug.print("a red:        {x}", x=actual_reduction)
         # jax.debug.print("p red         {x}", x=predicted_reduction)
-        jax.debug.print("|H_u|:        {x}", x=Hamiltonian_norm)
+        # jax.debug.print("|H_u|:        {x}", x=Hamiltonian_norm)
 
         iteration_counter = iteration_counter + 1
         # jax.debug.print("---------------------------------")
