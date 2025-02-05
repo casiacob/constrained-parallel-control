@@ -1,4 +1,4 @@
-## First clone and install the unconstrained parallel optimal control solver
+First clone and install the unconstrained parallel optimal control solver
 Clone the repository:
 
 ```
