@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 # Enable 64 bit floating point precision
 config.update("jax_enable_x64", True)
 
+# select platform
 config.update("jax_platform_name", "cpu")
+# config.update("jax_platform_name", "cuda")
 
 
 def projection(z: jnp.ndarray) -> jnp.ndarray:

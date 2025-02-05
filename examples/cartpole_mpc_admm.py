@@ -116,3 +116,9 @@ def mpc_body(carry, inp):
 
 _, mpc_out = jax.lax.scan(mpc_body, (x0, u, z, l), None, length=200)
 mpc_states, mpc_controls, iterations = mpc_out
+states = jnp.vstack((x0, mpc_states))
+plt.plot(mpc_controls[:, 0] / 20)
+plt.plot(states[:, 0])
+plt.plot(states[:, 1])
+plt.show()
+
