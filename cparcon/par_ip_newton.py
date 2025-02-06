@@ -217,22 +217,21 @@ def par_interior_point_optimal_control(
     initial_barrier_param = 0.1
 
     def while_body(val):
-        u, barrier_param, total_newton_iterations, outer_it_cnt = val
+        u, barrier_param, total_newton_iterations = val
         _, u, newton_iterations = newton_oc(ocp, u, initial_state, barrier_param)
         barrier_param = barrier_param / 5
         total_newton_iterations = total_newton_iterations + newton_iterations
-        outer_it_cnt = outer_it_cnt + 1
         # jax.debug.breakpoint()
-        return u, barrier_param, total_newton_iterations, outer_it_cnt
+        return u, barrier_param, total_newton_iterations
 
     def while_cond(val):
-        _, bp, _, _ = val
+        _, bp, _ = val
         return bp > 1e-4
 
-    opt_u, _, N_iterations, _ = lax.while_loop(
+    opt_u, _, N_iterations = lax.while_loop(
         while_cond,
         while_body,
-        (controls, initial_barrier_param, 0, 0),
+        (controls, initial_barrier_param, 0),
     )
     # jax.debug.print("converged in {x}", x=t_conv)
     # opt_x = rollout(ocp.dynamics, opt_u, initial_state)
