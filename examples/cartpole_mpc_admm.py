@@ -111,6 +111,7 @@ def mpc_body(carry, inp):
         states, prev_controls, prev_consensus, prev_duals
     )
     next_state = dynamics(prev_state, u_admm[0])
+    jax.debug.print('-')
     return (next_state, u_admm, z_admm, l_admm), (next_state, u_admm[0], iterations)
 
 
