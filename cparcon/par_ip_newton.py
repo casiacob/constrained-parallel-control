@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 import jax.scipy as jcp
-from jax import grad, lax, jacfwd
+from jax import grad, jacrev, lax, hessian
 import jax
 from cparcon.optimal_control_problem import OCP, Derivatives
 from paroc import par_bwd_pass, par_fwd_pass
@@ -9,19 +9,18 @@ from cparcon.utils import rollout
 from cparcon.costates import par_costates
 
 
-
 def compute_derivatives(
     ocp: OCP, states: jnp.ndarray, controls: jnp.ndarray, bp: float
 ):
     def body(x, u):
         cx_k, cu_k = grad(ocp.stage_cost, (0, 1))(x, u, bp)
-        cxx_k = jacfwd(jacfwd(ocp.stage_cost, 0), 0)(x, u, bp)
-        cuu_k = jacfwd(jacfwd(ocp.stage_cost, 1), 1)(x, u, bp)
-        cxu_k = jacfwd(jacfwd(ocp.stage_cost, 0), 1)(x, u, bp)
-        fx_k, fu_k = jacfwd(ocp.dynamics, (0, 1))(x, u)
-        fxx_k = jacfwd(jacfwd(ocp.dynamics, 0), 0)(x, u)
-        fuu_k = jacfwd(jacfwd(ocp.dynamics, 1), 1)(x, u)
-        fxu_k = jacfwd(jacfwd(ocp.dynamics, 0), 1)(x, u)
+        cxx_k = hessian(ocp.stage_cost, 0)(x, u, bp)
+        cuu_k = hessian(ocp.stage_cost, 1)(x, u, bp)
+        cxu_k = jacrev(jacrev(ocp.stage_cost, 0), 1)(x, u, bp)
+        fx_k, fu_k = jacrev(ocp.dynamics, (0, 1))(x, u)
+        fxx_k = jacrev(jacrev(ocp.dynamics, 0), 0)(x, u)
+        fuu_k = jacrev(jacrev(ocp.dynamics, 1), 1)(x, u)
+        fxu_k = jacrev(jacrev(ocp.dynamics, 0), 1)(x, u)
         return cx_k, cu_k, cxx_k, cuu_k, cxu_k, fx_k, fu_k, fxx_k, fuu_k, fxu_k
 
     cx, cu, cxx, cuu, cxu, fx, fu, fxx, fuu, fxu = jax.vmap(body)(states[:-1], controls)
