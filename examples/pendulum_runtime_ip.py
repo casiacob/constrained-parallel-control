@@ -72,7 +72,7 @@ def pendulum(state: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
 
 
 Ts = [0.05, 0.025, 0.0125, 0.01, 0.005, 0.0025, 0.00125, 0.001]
-N = [20, 40, 80, 100, 200, 400, 800, 1000] 
+N = [20, 40, 80, 100, 200, 400, 800, 1000]
 par_time_means = []
 par_time_medians = []
 seq_time_means = []
