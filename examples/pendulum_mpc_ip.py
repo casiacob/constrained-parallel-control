@@ -12,8 +12,8 @@ import timeit
 config.update("jax_enable_x64", True)
 
 # select platform
-# config.update("jax_platform_name", "cpu")
-config.update("jax_platform_name", "cuda")
+config.update("jax_platform_name", "cpu")
+# config.update("jax_platform_name", "cuda")
 
 
 def constraints(state, control):
@@ -87,41 +87,17 @@ annon_par = lambda init_u, init_x0: par_interior_point_optimal_control(
 _jitted_par = jax.jit(annon_par)
 
 
-# def mpc_body(carry, inp):
-#     prev_control, prev_x = carry
-#     u_par, _ = _jitted_par(prev_control, prev_x)
-#     x_next = dynamics(prev_x, u_par[0])
-#     return (u_par, x_next), (x_next, u_par[0])
-#
-#
-# _, _ = jax.lax.scan(mpc_body, (u, x0), xs=None, length=400)
-# start = time.time()
-# _, (mpc_states, mpc_controls) = jax.lax.scan(mpc_body, (u, x0), xs=None, length=400)
-# jax.block_until_ready(mpc_states)
-# end = time.time()
-# elapsed = end - start
-# print(elapsed)
-# mpc_states = jnp.vstack((x0, mpc_states))
-# plt.plot(mpc_controls[:, 0])
-# plt.plot(mpc_states[:, 0])
-# plt.show()
+def mpc_body(carry, inp):
+    prev_control, prev_x = carry
+    u_par, _ = _jitted_par(prev_control, prev_x)
+    x_next = dynamics(prev_x, u_par[0])
+    return (u_par, x_next), (x_next, u_par[0])
 
 
-for i in range(400):
-    start = time.time()
-    u, _ = _jitted_par(u, x0)
-    jax.block_until_ready(u)
-    end = time.time()
-    ellapsed = end - start
-    print(ellapsed)
-    x0 = dynamics(x0, u[0])
+_, (mpc_states, mpc_controls) = jax.lax.scan(mpc_body, (u, x0), xs=None, length=400)
+mpc_states = jnp.vstack((x0, mpc_states))
+plt.plot(mpc_controls[:, 0])
+plt.plot(mpc_states[:, 0])
+plt.show()
 
-#
-# import pandas as pd
-#
-# pd_states = pd.DataFrame(mpc_states[:, 0])
-# pd_controls = pd.DataFrame(mpc_controls[:, 0])
-#
-# pd_states.to_csv("pendulum_angles.csv")
-# pd_controls.to_csv("pendulum_torque.csv")
 
