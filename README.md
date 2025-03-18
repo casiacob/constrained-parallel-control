@@ -20,7 +20,7 @@ $ cd constrained-parallel-control
 $ pip install .
 ```
 
-Run a runtime example (requires GPU)
+Run a runtime example (note that the runtime experiment assumes a GPU is available)
 
 ```
 $ cd examples
